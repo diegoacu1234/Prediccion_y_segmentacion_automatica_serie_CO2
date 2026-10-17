@@ -2,14 +2,8 @@
 
 Implementa el método de Hyun (2025) para estimar la tasa de renovación de aire (ACH) a partir de una serie de CO₂ interior, dos variantes propias y tres alternativas, y los compara sobre series sintéticas con ACH conocido.
 
-<<<<<<< HEAD
-## Librería para el grupo
-
-El paquete `co2ach` se instala con pip (`pip install -e .` desde esta carpeta, o el `.whl` de `dist/`) y tiene una interfaz pública para usar la segmentación, la estimación de la ACH y el pronóstico sobre otros datos: `co2ach.ach` y `co2ach.pronostico`. La guía está en [`LIBRERIA.md`](LIBRERIA.md), la especificación de cada función en [`docs/referencia.md`](docs/referencia.md) y dos ejemplos ejecutables en `ejemplos/`. Para volver a armar el `.whl`: `py -3.12 -m pip wheel . --no-deps --no-build-isolation -w dist`.
-=======
 ## Librería
 El paquete `co2ach` se instala con pip (`pip install -e ".[completo]"` desde esta carpeta, o el `.whl` de `dist/`) y tiene una interfaz pública para usar la segmentación, la estimación de la ACH y el pronóstico sobre otros datos: `co2ach.ach` y `co2ach.pronostico`. La guía está en [`LIBRERIA.md`](LIBRERIA.md), la especificación de cada función en [`docs/referencia.md`](docs/referencia.md) y dos ejemplos ejecutables en `ejemplos/`. Para volver a armar el `.whl`: `py -3.12 -m pip wheel . --no-deps --no-build-isolation -w dist`.
->>>>>>> c9ab3cfec21941916a58027413b07b48aac62c9e
 
 ## Cómo correr
 
