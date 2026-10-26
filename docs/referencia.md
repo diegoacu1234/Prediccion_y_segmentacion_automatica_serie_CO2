@@ -1,11 +1,11 @@
 # Referencia de `co2ach`
 
-Versión 0.2.0. La interfaz pública está en dos módulos:
+Versión 0.3.0. La interfaz pública está en dos módulos:
 
 - [`co2ach.ach`](#segmentación-y-ach-co2achach): segmentación de series de CO₂ y estimación de la tasa de renovación de aire (ACH).
 - [`co2ach.pronostico`](#pronóstico-co2achpronostico): pronóstico del CO₂ a 1–60 minutos y de la probabilidad de superar un umbral.
 
-Todo lo que se lista acá también se puede importar directamente desde `co2ach` (por ejemplo, `co2ach.segment_day`). La guía de instalación y uso está en [`LIBRERIA.md`](../LIBRERIA.md).
+Todo lo que se lista acá también se puede importar directamente desde `co2ach` (por ejemplo, `co2ach.segment_day`). La instalación está en el [README](../README.md) y una guía con ejemplos en [`LIBRERIA.md`](../LIBRERIA.md).
 
 ## Convenciones
 
@@ -215,7 +215,7 @@ Un año de un salón (unos 160 días con clase) tarda del orden de 5 a 10 s por 
 | `ach_acotada`, …, `fuente_acotada` | con `groups` | Reajuste con la generación libre entre el caso menor y el mayor; `fuente_acotada` [ppm/h] es la que resulta |
 | `cota_acotada` | con `groups` | `"inferior"` o `"superior"` si la fuente quedó en esa cota, `"lambda"` si la ACH quedó en la cota del optimizador, vacío si quedó adentro |
 
-**Columnas de `blocks`** (Capítulo 6, «La ventilación del aula»): `fecha`, `bloque` (p. ej. `"07:45–10:00"`), `ach` (promedio de los ajustes de todos los métodos, ponderado por duración), `ach_mediana`, `ach_min` y `ach_max` (entre métodos), `metodos`, `eventos`, `minutos`, `ach_<caso menor>` y `ach_<caso mayor>`, y `sin_solucion_pct`. En los bloques de clase entran las subidas reajustadas con el caso central; en los vacíos, las bajadas con la asíntota en `c_ext`; sólo los ajustes con RMSE de hasta el 5 % del recorrido.
+**Columnas de `blocks`** (Capítulo 6, «La ventilación del aula»): `fecha`, `bloque` (p. ej. `"07:45–10:00"`), `ach` (promedio de los ajustes de todos los métodos, ponderado por duración), `ach_min` y `ach_max` (entre métodos), `metodos`, `eventos`, `minutos`, `ach_<caso menor>` y `ach_<caso mayor>`, y `sin_solucion_pct`. En los bloques de clase entran las subidas reajustadas con el caso central; en los vacíos, las bajadas con la asíntota en `c_ext`; sólo los ajustes con RMSE de hasta el 5 % del recorrido.
 
 ### `daily_ach`
 
@@ -413,7 +413,7 @@ Referencia: el CO₂ de cada horizonte es el del origen. `at` como en `predict`.
 mass_balance_forecast(readings, at=None, window=15) -> pd.DataFrame
 ```
 
-Referencia física, sin entrenamiento: ajusta la recta ΔC = a − β·C sobre los últimos `window` minutos y la prolonga como la solución del balance de masa (Capítulo 7), con la ACH acotada a 20 1/h y el pronóstico entre el CO₂ exterior y 5000 ppm. Agrega `ach_estimada` [1/h]. Sirve a horizontes cortos; a 60 min su error supera al de la persistencia.
+Referencia física, sin entrenamiento: ajusta la recta ΔC = a − β·C̄ sobre los últimos `window` minutos y la prolonga como la solución del balance de masa (Capítulo 7), con la ACH acotada a 20 1/h y el pronóstico entre el CO₂ exterior y 5000 ppm. Agrega `ach_estimada` [1/h]. Sirve a horizontes cortos; a 60 min su error supera al de la persistencia.
 
 ### `minute_grid`
 

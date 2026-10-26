@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+.vscode/
+.claude/
+desktop.ini
+Thumbs.db
+.DS_Store
