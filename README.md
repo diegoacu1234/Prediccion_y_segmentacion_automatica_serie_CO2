@@ -1,39 +1,69 @@
-# Predicción y segmentación automática de series de CO₂
+# Segmentación de series de CO₂ y estimación de ACH
 
-Código del proyecto: *Análisis de la dinámica de ventilación en aulas escolares mediante modelos predictivos y segmentación automática de series temporales*
+Implementa el método de Hyun (2025) para estimar la tasa de renovación de aire (ACH) a partir de una serie de CO₂ interior, dos variantes propias y tres alternativas, y los compara sobre series sintéticas con ACH conocido.
 
-## Instalación
+## Librería
+El paquete `co2ach` se instala con pip (`pip install -e ".[completo]"` desde esta carpeta, o el `.whl` de `dist/`) y tiene una interfaz pública para usar la segmentación, la estimación de la ACH y el pronóstico sobre otros datos: `co2ach.ach` y `co2ach.pronostico`. La guía está en [`LIBRERIA.md`](LIBRERIA.md), la especificación de cada función en [`docs/referencia.md`](docs/referencia.md) y dos ejemplos ejecutables en `ejemplos/`. Para volver a armar el `.whl`: `py -3.12 -m pip wheel . --no-deps --no-build-isolation -w dist`.
 
-Con Python 3.12:
+## Cómo correr
+
+Usar Python 3.12 (`py -3.12`) o el Python de Anaconda. El `python` del PATH de esta máquina tiene scikit-learn y pandas rotos.
 
 ```
-git clone https://github.com/diegoacu1234/Prediccion_y_segmentacion_automatica_serie_CO2
-cd Prediccion_y_segmentacion_automatica_serie_CO2
-pip install -e .
+py -3.12 scripts/run_comparison.py                 # los tres escenarios, ~2 min
+py -3.12 scripts/run_comparison.py --escenarios A  # sólo uno
+py -3.12 -m unittest discover -s tests -v          # tests, ~2 min
 ```
 
-Chronos es opcional porque necesita PyTorch: `pip install -e ".[chronos]"`.
+El script deja las figuras en `outputs/figs`, las tablas en `outputs/tables` y las series generadas en `outputs/data`.
 
-## Uso
+`notebooks/comparacion.ipynb` hace lo mismo para un escenario y permite cambiar el ruido y los hiperparámetros. En VS Code, elegir como kernel Python 3.12 o Anaconda.
 
-```python
-import co2ach
+## Métodos
 
-lecturas = co2ach.read_room("mediciones", "EscuelaA", 2)  # o cualquier tabla con columnas tiempo y co2
+| Clave | Segmentación | Ajuste |
+|---|---|---|
+| M0 | Oráculo: regímenes verdaderos | exponencial general |
+| M0t | Oráculo: sólo el transitorio de cada régimen | exponencial general |
+| M1 | Hyun fiel, preset School: mediana + K-means + DBSCAN | sólo subidas, (E, λ) |
+| M1th | Hyun fiel, preset Test house | sólo subidas, (E, λ) |
+| M2 | Hyun, usando también el cluster de bajada | bajadas con generación (E ≥ 0 libre) |
+| M3a | Hyun con C″ como tercer feature de K-means | como M2 |
+| M3b | Hyun cortando los sub-clusters en los quiebres de C″ | como M2 |
+| M4 | Derivada: umbral con histéresis sobre C′ y quiebres de C″ | exponencial general |
+| M5 | PELT con costo exponencial | exponencial general, régimen completo |
+| M6 | HMM gaussiano de 3 estados sobre C′ | exponencial general |
 
-dia = co2ach.segment_day(lecturas, "2024-10-08", methods=("hmm", "pelt"))
-dia.reported()            # los eventos con una ACH confiable
-dia.plot(path="dia.png")
+La "exponencial general" ajusta `C(t) = C_ss + (C0 − C_ss)·exp(−λ(t − t0))` con C0, C_ss ≥ C_ext y λ libres, sobre los datos sin outliers. El ajuste de Hyun fija C0 en la primera muestra filtrada y estima E y λ.
 
-modelo = co2ach.Forecaster.train({"A02": lecturas})
-modelo.predict(lecturas, room="A02")   # CO₂ a 1–60 min, intervalo del 80 % y probabilidad de pasar 1000 ppm
+## Escenarios
+
+- **A, día de aula**: eventos bien separados, con y sin meseta.
+- **B, quiebres dentro de una misma fase**: sube y vuelve a subir más rápido, baja y sigue bajando más lento.
+- **C, difícil**: ventilación baja, eventos de 20 a 45 minutos, más ruido, cambios graduales de ocupación y deriva del CO₂ exterior.
+
+Están definidos en `co2ach/synth.py`; ahí se cambian el ACH, la ocupación, el volumen y el sensor.
+
+## Experimentos
+
+Tres preguntas, respondidas con un Monte Carlo sobre los tres escenarios (6 niveles de ruido × 30 realizaciones):
+
+1. **Meseta como asíntota.** ¿Qué pasa si la meseta se ajusta junto con el transitorio que la precede, en vez de tratarla como una fase aparte?
+2. **Ruido.** ¿Cómo se degrada cada método al subir el ruido del sensor, de 1 a 40 ppm?
+3. **Generación conocida.** ¿Qué se gana si se conoce G (queda libre sólo el ACH) frente a dejar libres C∞ y el ACH? ¿Y con qué error en G deja de convenir?
+
+```
+py -3.12 scripts/run_experimentos.py                  # Monte Carlo, ~45 min con 6 procesos; se puede reanudar
+py -3.12 scripts/plot_experimentos.py                 # figuras y tablas, ~2 min
+py -3.12 scripts/plot_experimentos.py --idioma es en  # además las mismas figuras en inglés (figs_en/)
+py -3.12 scripts/diagnostico_sesgo_hyun.py            # por qué Hyun subestima el ACH, ~3 min
 ```
 
-Si tenés el horario del salón y sabés cuántos chiquilines hay, `co2ach.analyze_room` lo usa y te da la ACH de cada día. Hay más ejemplos en [LIBRERIA.md](LIBRERIA.md) y el detalle de cada función en [docs/referencia.md](docs/referencia.md).
+Todo queda en `outputs/experimentos`: las tablas del Monte Carlo (`mc_*.csv.gz`), las figuras en PNG a 300 ppp y PDF (`figs/`, con `pies_de_figura.md`) y las tablas resumen en CSV y LaTeX (`tablas/`). `notebooks/experimentos.ipynb` corre las variantes sobre una serie y muestra las figuras principales.
 
-## Los métodos
+Cada método se corre en cuatro variantes:
 
-| Clave | En la tesis | Nombre en `co2ach` |
+| | Generación libre | Generación conocida |
 |---|---|---|
 | M1 | Hyun fiel (mediana, K-means y DBSCAN, sólo subidas) | `"hyun"` |
 | M2 | Hyun + decaimientos | `"hyun_decaimientos"` |
