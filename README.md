@@ -36,6 +36,8 @@ El script deja las figuras en `outputs/figs`, las tablas en `outputs/tables` y l
 
 La "exponencial general" ajusta `C(t) = C_ss + (C0 − C_ss)·exp(−λ(t − t0))` con C0, C_ss ≥ C_ext y λ libres, sobre los datos sin outliers. El ajuste de Hyun fija C0 en la primera muestra filtrada y estima E y λ.
 
+Para mediciones reales usaría el HMM, que fue el que más se pareció a la segmentación hecha a mano (cap. 6). En series que cumplen bien el modelo, PELT.
+
 ## Escenarios
 
 - **A, día de aula**: eventos bien separados, con y sin meseta.
@@ -43,38 +45,6 @@ La "exponencial general" ajusta `C(t) = C_ss + (C0 − C_ss)·exp(−λ(t − t0
 - **C, difícil**: ventilación baja, eventos de 20 a 45 minutos, más ruido, cambios graduales de ocupación y deriva del CO₂ exterior.
 
 Están definidos en `co2ach/synth.py`; ahí se cambian el ACH, la ocupación, el volumen y el sensor.
-
-## Experimentos
-
-Tres preguntas, respondidas con un Monte Carlo sobre los tres escenarios (6 niveles de ruido × 30 realizaciones):
-
-1. **Meseta como asíntota.** ¿Qué pasa si la meseta se ajusta junto con el transitorio que la precede, en vez de tratarla como una fase aparte?
-2. **Ruido.** ¿Cómo se degrada cada método al subir el ruido del sensor, de 1 a 40 ppm?
-3. **Generación conocida.** ¿Qué se gana si se conoce G (queda libre sólo el ACH) frente a dejar libres C∞ y el ACH? ¿Y con qué error en G deja de convenir?
-
-```
-py -3.12 scripts/run_experimentos.py                  # Monte Carlo, ~45 min con 6 procesos; se puede reanudar
-py -3.12 scripts/plot_experimentos.py                 # figuras y tablas, ~2 min
-py -3.12 scripts/plot_experimentos.py --idioma es en  # además las mismas figuras en inglés (figs_en/)
-py -3.12 scripts/diagnostico_sesgo_hyun.py            # por qué Hyun subestima el ACH, ~3 min
-```
-
-Todo queda en `outputs/experimentos`: las tablas del Monte Carlo (`mc_*.csv.gz`), las figuras en PNG a 300 ppp y PDF (`figs/`, con `pies_de_figura.md`) y las tablas resumen en CSV y LaTeX (`tablas/`). `notebooks/experimentos.ipynb` corre las variantes sobre una serie y muestra las figuras principales.
-
-Cada método se corre en cuatro variantes:
-
-| | Generación libre | Generación conocida |
-|---|---|---|
-| M1 | Hyun fiel (mediana, K-means y DBSCAN, sólo subidas) | `"hyun"` |
-| M2 | Hyun + decaimientos | `"hyun_decaimientos"` |
-| M3a | Hyun + C″ en K-means | `"hyun_c2"` |
-| M3b | Hyun + quiebres | `"hyun_quiebres"` |
-| M4 | Derivada con histéresis | `"derivada"` |
-| M5 | PELT con costo exponencial | `"pelt"` |
-| M6 | HMM de tres estados | `"hmm"` |
-| M0 | Oráculo (sólo en las series sintéticas) | — |
-
-Para mediciones reales usaría el HMM, que fue el que más se pareció a la segmentación hecha a mano (cap. 6). En series que cumplen bien el modelo, PELT.
 
 ## Qué hay en cada archivo
 
@@ -88,8 +58,7 @@ co2ach/
   pipeline.py        cada método = segmentador + ajuste + filtros
   synth.py           series sintéticas y escenarios A, B y C (5.1)
   evaluate.py        comparación con la verdad
-  variants.py        variantes de tramo y generación del Monte Carlo
-  experiments.py     el Monte Carlo
+  variants.py        ajuste sólo del transitorio o con la meseta (figura 4.7)
   cfd.py             la simulación CFD (5.2)
   mediciones.py      mediciones del aula, ruido efectivo y reajustes con la ocupación (cap. 6)
   manual.py          la referencia marcada a mano (6.8)
